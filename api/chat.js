@@ -1,39 +1,52 @@
-export default async function handler(req, res) {
+    export default async function handler(req, res) {
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method not allowed" });
+    return res.status(405).json({ message: "الطريقة غير مدعومة" });
   }
 
-  const { userMessage } = req.body;
+  const { message } = req.body;
+
+  if (!message) {
+    return res.status(400).json({ message: "الرسالة مفقودة" });
+  }
 
   try {
-    const gptRes = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
+        model: "gpt-3.5-turbo-0125",
         messages: [
           {
             role: "system",
-            content: "أنت مساعد تعليمي شبابي خاص بشهادة التعليم المتوسط (BEM) في الجزائر. لا تولد أكواد برمجية ولا صور. أجب عن الأسئلة بدقة وبلغة عربية مفهومة."
+            content:
+              "أنت مساعد ذكي موجه خصيصًا لتلاميذ الجزائر المقبلين على شهادة التعليم المتوسط. قدم المساعدة بأسلوب شبابي واضح وراقي، وكن صديقًا لهم دون استخدام أكواد برمجية أو صور.",
           },
           {
             role: "user",
-            content: userMessage
-          }
+            content: message,
+          },
         ],
+        temperature: 0.7,
       }),
     });
 
-    const gptData = await gptRes.json();
-    const reply = gptData.choices?.[0]?.message?.content || "تحشاتلك امحمد.";
+    const data = await response.json();
 
-    res.status(200).json({ reply });
-  } catch (err) {
-    res.status(500).json({ message: "خطأ في الاتصال بـ OpenAI." });
+    if (data.error) {
+      console.error("OpenAI Error:", data.error);
+      return res.status(500).json({ message: "خطأ من OpenAI: " + data.error.message });
+    }
+
+    const reply = data.choices?.[0]?.message?.content || "لم أتمكن من الرد على ذلك.";
+
+    res.status(200).json({ message: reply });
+  } catch (error) {
+    console.error("API error:", error);
+    res.status(500).json({ message: "حدث خطأ أثناء الاتصال بـ OpenAI." });
   }
 }
