@@ -30,7 +30,7 @@ export default async function handler(req, res) {
     });
 
     const gptData = await gptRes.json();
-    const reply = gptData.choices?.[0]?.message?.content || "لم أتمكن من توليد إجابة.";
+    const reply = gptData.choices?.[0]?.message?.content || "تحشاتلك امحمد.";
 
     res.status(200).json({ reply });
   } catch (err) {
